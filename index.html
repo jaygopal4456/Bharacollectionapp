@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>भाड़ा वसूली ऐप</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:16px}
+h2{color:#075985}
+.card{background:white;padding:16px;margin:12px 0;border-radius:12px;box-shadow:0 2px 8px #ddd}
+input,button{box-sizing:border-box;width:100%;padding:12px;margin:6px 0;border-radius:8px;font-size:16px}
+input{border:1px solid #ccc}
+button{background:#0284c7;color:white;border:0;font-weight:bold}
+table{width:100%;background:white;border-collapse:collapse}
+td,th{padding:8px;border:1px solid #ddd;text-align:left}
+.small{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<h2>🚚 भाड़ा वसूली ऐप</h2>
+
+<div class="card">
+<h3>नया ग्राहक / भाड़ा जोड़ें</h3>
+<input id="name" placeholder="ग्राहक का नाम">
+<input id="mobile" placeholder="मोबाइल नंबर" inputmode="numeric">
+<input id="item" placeholder="सामान / गाड़ी का विवरण">
+<input id="amount" type="number" placeholder="कुल भाड़ा (₹)">
+<input id="paid" type="number" placeholder="जमा राशि (₹)" value="0">
+<label>भाड़ा आने की तारीख</label>
+<input id="dueDate" type="date">
+<button onclick="addRecord()">रिकॉर्ड सेव करें</button>
+</div>
+
+<div class="card">
+<h3>📊 हिसाब</h3>
+<p>कुल भाड़ा: <b id="total">₹0</b></p>
+<p>कुल वसूली: <b id="collected">₹0</b></p>
+<p>कुल बकाया: <b id="balance">₹0</b></p>
+</div>
+
+<div class="card">
+<h3>ग्राहकों का रिकॉर्ड</h3>
+<input id="search" placeholder="नाम या मोबाइल से खोजें" oninput="render()">
+<div id="records"></div>
+</div>
+
+<script>
+let data=JSON.parse(localStorage.getItem("bharaRecords")||"[]");
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN");
+function save(){localStorage.setItem("bharaRecords",JSON.stringify(data));}
+function addRecord(){
+ const name=document.getElementById("name").value.trim();
+ const mobile=document.getElementById("mobile").value.trim();
+ const item=document.getElementById("item").value.trim();
+ const amount=Number(document.getElementById("amount").value);
+ const paid=Number(document.getElementById("paid").value||0);
+ const dueDate=document.getElementById("dueDate").value;
+ if(!name||!amount||amount<0||paid<0||paid>amount){alert("नाम और सही भाड़ा/जमा राशि भरें।");return;}
+ data.push({id:Date.now(),name,mobile,item,amount,paid,dueDate});
+ save();render();
+ ["name","mobile","item","amount","paid","dueDate"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("paid").value=0;
+}
+function render(){
+ const q=(document.getElementById("search").value||"").toLowerCase();
+ const list=data.filter(r=>r.name.toLowerCase().includes(q)||r.mobile.includes(q));
+ document.getElementById("total").textContent=money(data.reduce((s,r)=>s+r.amount,0));
+ document.getElementById("collected").textContent=money(data.reduce((s,r)=>s+r.paid,0));
+ document.getElementById("balance").textContent=money(data.reduce((s,r)=>s+r.amount-r.paid,0));
+ document.getElementById("records").innerHTML=list.length?list.map(r=>
+ `<div class="card"><b>${escapeHTML(r.name)}</b><p>मोबाइल: ${escapeHTML(r.mobile||"-")}</p>
+ <p>सामान: ${escapeHTML(r.item||"-")}</p><p>कुल भाड़ा: ${money(r.amount)}</p>
+ <p>जमा: ${money(r.paid)} | बकाया: ${money(r.amount-r.paid)}</p>
+ <p>तारीख: ${escapeHTML(r.dueDate||"-")}</p>
+ <button onclick="collect(${r.id})">और वसूली जोड़ें</button>
+ <button onclick="removeRecord(${r.id})" style="background:#dc2626">रिकॉर्ड हटाएँ</button></div>`).join(""):"अभी कोई रिकॉर्ड नहीं है।";
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function collect(id){
+ const r=data.find(x=>x.id===id);if(!r)return;
+ const left=r.amount-r.paid;if(left<=0){alert("पूरा भाड़ा जमा हो चुका है।");return;}
+ const n=Number(prompt("कितनी राशि जमा हुई? बाकी: "+money(left)));
+ if(!Number.isFinite(n)||n<=0||n>left){alert("सही राशि डालें।");return;}
+ r.paid+=n;save();render();
+}
+function removeRecord(id){
+ if(confirm("क्या आप यह रिकॉर्ड हटाना चाहते हैं?")){
+ data=data.filter(r=>r.id!==id);save();render();
+ }
+}
+render();
+</script>
+</body>
+</html>
+
+### 📱 स्टेप 3: कोड सेव करें
+
+1. कोड पेस्ट करने के बाद ऊपर **Commit changes…** बटन दबाएँ।
+2. अगली स्क्रीन पर फिर **Commit changes** दबाएँ।
+3. फ़ाइल आपके GitHub Repository में सेव हो जाएगी।
+
+**महत्वपूर्ण:** यह पहला वेब-ऐप संस्करण है। डेटा उसी ब्राउज़र में सेव होगा; ब्राउज़र का डेटा मिटने पर रिकॉर्ड खो सकता है। अभी इसे APK नहीं बनाया गया है।
+
+**कोड सेव हो जाने पर स्क्रीनशॉट भेजें।** फिर मैं आपको ऐप को मोबाइल पर चलाने और APK बनाने का अगला स्टेप बताऊँगा।
